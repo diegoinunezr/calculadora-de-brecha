@@ -256,7 +256,7 @@
     <div class="calc-inputs">
       <div class="calc-input-group" style="flex:2">
         <label>Monto</label>
-        <input type="text" inputmode="numeric" id="calc-amount" value="100" autocomplete="off" oninput="handleAmountInput(this)" />
+        <input type="text" inputmode="numeric" id="calc-amount" value="1,00" autocomplete="off" readonly onfocus="initCalcInput()" />
       </div>
       <div class="calc-input-group" style="flex:2">
         <label>Dirección</label>
@@ -443,38 +443,72 @@
   let currentHorizon = 30;
   let chartInstance = null;
 
-  function handleAmountInput(el) {
-    const cursorPos = el.selectionStart;
-    const prevLen = el.value.length;
+  // ── CALCULADORA BANCARIA ─────────────────────────────────
+  let calcDigits = '100'; // representa 1,00
 
-    // Extraer solo dígitos y coma
-    let raw = el.value.replace(/[^0-9,]/g, '');
+  function initCalcInput() {
+    calcDigits = '0'; // resetea al tocar
+    updateCalcDisplay();
+    const el = document.getElementById('calc-amount');
+    el.removeAttribute('readonly');
+    el.addEventListener('keydown', handleCalcKey);
+    el.addEventListener('blur', () => el.setAttribute('readonly', ''));
+  }
 
-    // Solo una coma permitida
-    const parts = raw.split(',');
-    let intPart = parts[0];
-    let decPart = parts.length > 1 ? ',' + parts.slice(1).join('') : '';
-
-    // Limitar decimales a 2
-    if (decPart.length > 3) decPart = decPart.slice(0, 3);
-
-    // Formatear parte entera con puntos de miles
-    intPart = intPart.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
-
-    el.value = intPart + decPart;
-
-    // Restaurar posición del cursor
-    const newLen = el.value.length;
-    el.setSelectionRange(cursorPos + (newLen - prevLen), cursorPos + (newLen - prevLen));
-
+  function handleCalcKey(e) {
+    e.preventDefault();
+    if (e.key >= '0' && e.key <= '9') {
+      if (calcDigits === '0') calcDigits = e.key;
+      else if (calcDigits.length < 13) calcDigits += e.key;
+    } else if (e.key === 'Backspace') {
+      calcDigits = calcDigits.slice(0, -1) || '0';
+    }
+    updateCalcDisplay();
     recalc();
   }
 
-  function getAmount() {
-    const raw = document.getElementById('calc-amount').value;
-    // Quitar puntos de miles, reemplazar coma decimal por punto
-    return parseFloat(raw.replace(/\./g, '').replace(',', '.')) || 0;
+  // Para teclado en pantalla (iOS/Android) interceptamos el evento input
+  document.addEventListener('DOMContentLoaded', () => {
+    const el = document.getElementById('calc-amount');
+    let prevVal = el.value;
+    el.addEventListener('input', () => {
+      // Extraer solo dígitos del nuevo valor
+      const newDigits = el.value.replace(/[^0-9]/g, '');
+      const prevDigits = prevVal.replace(/[^0-9]/g, '');
+
+      if (newDigits.length > prevDigits.length) {
+        // Se agregó un dígito
+        const added = newDigits.slice(-1);
+        if (calcDigits === '0') calcDigits = added;
+        else if (calcDigits.length < 13) calcDigits += added;
+      } else if (newDigits.length < prevDigits.length) {
+        // Se borró un dígito
+        calcDigits = calcDigits.slice(0, -1) || '0';
+      }
+      updateCalcDisplay();
+      recalc();
+      prevVal = el.value;
+    });
+  });
+
+  function updateCalcDisplay() {
+    const el = document.getElementById('calc-amount');
+    const n = calcDigits.padStart(3, '0');
+    const intPart = n.slice(0, -2).replace(/\B(?=(\d{3})+(?!\d))/g, '.') || '0';
+    const decPart = n.slice(-2);
+    el.value = intPart + ',' + decPart;
+    // Mantener cursor al final
+    setTimeout(() => el.setSelectionRange(el.value.length, el.value.length), 0);
   }
+
+  function getAmount() {
+    const n = calcDigits.padStart(3, '0');
+    const intPart = parseInt(n.slice(0, -2)) || 0;
+    const decPart = parseInt(n.slice(-2)) / 100;
+    return intPart + decPart;
+  }
+
+  function handleAmountInput() {} // legacy, no usado
 
   function copyVal(id, btn) {
     const text = document.getElementById(id).textContent;
@@ -804,7 +838,7 @@
     if (bcvRate === null || p2pRate === null) return;
     const amount = getAmount();
     const dir = document.getElementById('calc-from').value;
-    const dec = (n) => n >= 10000 ? 0 : n >= 100 ? 0 : 2;
+    const dec = (n) => n >= 1000000 ? 0 : 2;
 
     if (dir === 'fiat_to_ves') {
       // USD → Bs.
@@ -849,6 +883,7 @@
   }
 
   fetchAll();
+  updateCalcDisplay();
   setInterval(fetchAll, 120000);
 </script>
 </body>
