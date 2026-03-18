@@ -256,7 +256,7 @@
     <div class="calc-inputs">
       <div class="calc-input-group" style="flex:2">
         <label>Monto</label>
-        <input type="text" inputmode="decimal" id="calc-amount" value="100" autocomplete="off" oninput="handleAmountInput(this)" />
+        <input type="text" inputmode="numeric" id="calc-amount" value="100" autocomplete="off" oninput="handleAmountInput(this)" />
       </div>
       <div class="calc-input-group" style="flex:2">
         <label>Dirección</label>
@@ -804,24 +804,25 @@
     if (bcvRate === null || p2pRate === null) return;
     const amount = getAmount();
     const dir = document.getElementById('calc-from').value;
+    const dec = (n) => n >= 10000 ? 0 : n >= 100 ? 0 : 2;
 
     if (dir === 'fiat_to_ves') {
       // USD → Bs.
-      document.getElementById('calc-bcv').textContent     = fmt(amount * bcvRate, 2) + ' Bs.';
-      document.getElementById('calc-p2p').textContent     = fmt(amount * p2pRate, 2) + ' Bs.';
+      document.getElementById('calc-bcv').textContent     = fmt(amount * bcvRate, dec(amount * bcvRate)) + ' Bs.';
+      document.getElementById('calc-p2p').textContent     = fmt(amount * p2pRate, dec(amount * p2pRate)) + ' Bs.';
       document.getElementById('calc-bcv-rate').textContent  = '1 USD = ' + fmt(bcvRate, 2) + ' Bs.';
-      document.getElementById('calc-p2p-rate').textContent  = '1 USD = ' + fmt(p2pRate, 2) + ' Bs.';
+      document.getElementById('calc-p2p-rate').textContent  = '1 USDT = ' + fmt(p2pRate, 2) + ' Bs.';
       // EUR → Bs.
       if (eurBcvRate) {
-        document.getElementById('calc-eur-bcv').textContent  = fmt(amount * eurBcvRate, 2) + ' Bs.';
+        document.getElementById('calc-eur-bcv').textContent  = fmt(amount * eurBcvRate, dec(amount * eurBcvRate)) + ' Bs.';
         document.getElementById('calc-eur-bcv-rate').textContent = '1 EUR = ' + fmt(eurBcvRate, 2) + ' Bs.';
       }
     } else {
       // Bs. → USD
       document.getElementById('calc-bcv').textContent     = fmt(amount / bcvRate, 4) + ' USD';
-      document.getElementById('calc-p2p').textContent     = fmt(amount / p2pRate, 4) + ' USD';
+      document.getElementById('calc-p2p').textContent     = fmt(amount / p2pRate, 4) + ' USDT';
       document.getElementById('calc-bcv-rate').textContent  = '1 USD = ' + fmt(bcvRate, 2) + ' Bs.';
-      document.getElementById('calc-p2p-rate').textContent  = '1 USD = ' + fmt(p2pRate, 2) + ' Bs.';
+      document.getElementById('calc-p2p-rate').textContent  = '1 USDT = ' + fmt(p2pRate, 2) + ' Bs.';
       // Bs. → EUR
       if (eurBcvRate) {
         document.getElementById('calc-eur-bcv').textContent  = fmt(amount / eurBcvRate, 4) + ' EUR';
