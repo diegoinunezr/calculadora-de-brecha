@@ -1,0 +1,666 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Brecha Cambiaria Venezuela</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0a0f;
+    --surface: #111118;
+    --surface2: #18181f;
+    --border: rgba(255,255,255,0.07);
+    --border2: rgba(255,255,255,0.12);
+    --text: #f0eee8;
+    --muted: #888780;
+    --dim: #444450;
+    --green: #1fc97f;
+    --green-dim: rgba(31,201,127,0.12);
+    --orange: #f07030;
+    --orange-dim: rgba(240,112,48,0.12);
+    --red: #e84040;
+    --mono: 'DM Mono', monospace;
+    --sans: 'Syne', sans-serif;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: var(--sans); min-height: 100vh; padding: 2rem 1rem; }
+  .grid-bg {
+    position: fixed; inset: 0;
+    background-image: linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px),
+                      linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px);
+    background-size: 40px 40px; pointer-events: none; z-index: 0;
+  }
+  .page { max-width: 900px; margin: 0 auto; position: relative; z-index: 1; }
+
+  /* HEADER */
+  .header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 2.5rem; flex-wrap: wrap; gap: 1rem; }
+  .eyebrow { font-family: var(--mono); font-size: 11px; letter-spacing: 0.12em; color: var(--muted); text-transform: uppercase; margin-bottom: 8px; }
+  .title { font-size: 32px; font-weight: 800; line-height: 1.1; }
+  .title span { color: var(--orange); }
+  .header-right { display: flex; flex-direction: column; align-items: flex-end; gap: 8px; }
+  .refresh-btn { display: flex; align-items: center; gap: 8px; padding: 9px 18px; background: transparent; border: 1px solid var(--border2); border-radius: 6px; color: var(--text); font-family: var(--sans); font-size: 13px; font-weight: 600; cursor: pointer; transition: background 0.15s, border-color 0.15s; }
+  .refresh-btn:hover { background: var(--surface2); border-color: var(--orange); }
+  .refresh-icon { font-size: 16px; display: inline-block; }
+  .refresh-icon.spin { animation: spin 0.8s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .last-update { font-family: var(--mono); font-size: 11px; color: var(--muted); }
+
+  /* ERROR */
+  .error-banner { background: rgba(232,64,64,0.1); border: 1px solid rgba(232,64,64,0.3); border-radius: 8px; padding: 12px 16px; font-family: var(--mono); font-size: 12px; color: var(--red); margin-bottom: 1.5rem; display: none; }
+
+  /* HERO */
+  .brecha-hero { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 2rem 2.5rem; margin-bottom: 1.5rem; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 2rem; position: relative; overflow: hidden; }
+  .brecha-hero::before { content: ''; position: absolute; top: -60px; right: -60px; width: 220px; height: 220px; background: radial-gradient(circle, rgba(240,112,48,0.08) 0%, transparent 70%); pointer-events: none; }
+  .brecha-label { font-family: var(--mono); font-size: 11px; letter-spacing: 0.1em; color: var(--muted); text-transform: uppercase; margin-bottom: 8px; }
+  .brecha-pct { font-family: var(--mono); font-size: 64px; font-weight: 500; color: var(--orange); line-height: 1; }
+  .brecha-abs { font-family: var(--mono); font-size: 14px; color: var(--muted); margin-top: 6px; }
+  .brecha-rates { display: flex; flex-direction: column; gap: 16px; }
+  .rate-item { display: flex; align-items: center; gap: 16px; }
+  .rate-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+  .rate-name { font-size: 12px; color: var(--muted); font-family: var(--mono); margin-bottom: 2px; }
+  .rate-value { font-family: var(--mono); font-size: 22px; font-weight: 500; }
+  .rate-value.green { color: var(--green); }
+  .rate-value.orange { color: var(--orange); }
+
+  /* CHART SECTION */
+  .chart-section { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 1.5rem; margin-bottom: 1.5rem; }
+  .chart-header { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; margin-bottom: 1.25rem; }
+  .chart-title-group { }
+  .chart-title { font-family: var(--mono); font-size: 11px; letter-spacing: 0.1em; color: var(--muted); text-transform: uppercase; }
+  .chart-subtitle { font-family: var(--mono); font-size: 12px; color: var(--dim); margin-top: 3px; }
+  .horizon-btns { display: flex; gap: 4px; }
+  .horizon-btn { padding: 5px 11px; background: transparent; border: 1px solid var(--border2); border-radius: 5px; color: var(--muted); font-family: var(--mono); font-size: 11px; cursor: pointer; transition: all 0.15s; }
+  .horizon-btn:hover { border-color: var(--orange); color: var(--text); }
+  .horizon-btn.active { background: var(--orange); border-color: var(--orange); color: #fff; }
+  .chart-wrap { position: relative; width: 100%; height: 260px; }
+  .chart-loading { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-family: var(--mono); font-size: 12px; color: var(--muted); }
+  .chart-stats { display: flex; gap: 1.5rem; margin-top: 1rem; flex-wrap: wrap; }
+  .chart-stat { }
+  .chart-stat-label { font-family: var(--mono); font-size: 10px; color: var(--dim); text-transform: uppercase; letter-spacing: 0.08em; }
+  .chart-stat-val { font-family: var(--mono); font-size: 15px; font-weight: 500; color: var(--text); margin-top: 2px; }
+
+  /* BAR */
+  .bar-section { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 1.25rem 1.5rem; margin-bottom: 1.5rem; }
+  .bar-title { font-family: var(--mono); font-size: 11px; letter-spacing: 0.1em; color: var(--muted); text-transform: uppercase; margin-bottom: 1rem; }
+  .bar-row { margin-bottom: 12px; }
+  .bar-row:last-child { margin-bottom: 0; }
+  .bar-meta { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+  .bar-meta-label { font-size: 13px; color: var(--text); font-family: var(--mono); }
+  .bar-meta-val { font-size: 13px; font-family: var(--mono); color: var(--muted); }
+  .bar-track { height: 8px; background: var(--surface2); border-radius: 4px; overflow: hidden; }
+  .bar-fill { height: 100%; border-radius: 4px; transition: width 0.7s cubic-bezier(0.4,0,0.2,1); }
+
+  /* METRICS */
+  .metrics-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1rem; margin-bottom: 1.5rem; }
+  .metric-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 1.25rem; }
+  .metric-card-label { font-family: var(--mono); font-size: 11px; letter-spacing: 0.1em; color: var(--muted); text-transform: uppercase; margin-bottom: 8px; }
+  .metric-card-val { font-family: var(--mono); font-size: 20px; font-weight: 500; color: var(--text); }
+  .metric-card-sub { font-family: var(--mono); font-size: 11px; color: var(--dim); margin-top: 4px; }
+
+  /* CALC */
+  .calc-section { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 1.5rem; margin-bottom: 1.5rem; }
+  .section-title { font-family: var(--mono); font-size: 11px; letter-spacing: 0.1em; color: var(--muted); text-transform: uppercase; margin-bottom: 1.25rem; }
+  .calc-inputs { display: flex; gap: 10px; margin-bottom: 1rem; flex-wrap: wrap; }
+  .calc-input-group { display: flex; flex-direction: column; gap: 6px; flex: 1; min-width: 120px; }
+  .calc-input-group label { font-family: var(--mono); font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; }
+  .calc-input-group input, .calc-input-group select { background: var(--surface2); border: 1px solid var(--border2); border-radius: 8px; padding: 10px 12px; color: var(--text); font-family: var(--mono); font-size: 15px; outline: none; transition: border-color 0.15s; }
+  .calc-input-group input:focus, .calc-input-group select:focus { border-color: var(--orange); }
+  .calc-results { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .calc-result-card { border-radius: 10px; padding: 14px 16px; }
+  .calc-result-card.bcv { background: var(--green-dim); border: 1px solid rgba(31,201,127,0.2); }
+  .calc-result-card.p2p { background: var(--orange-dim); border: 1px solid rgba(240,112,48,0.2); }
+  .calc-result-label { font-family: var(--mono); font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 6px; }
+  .calc-result-card.bcv .calc-result-label { color: var(--green); }
+  .calc-result-card.p2p .calc-result-label { color: var(--orange); }
+  .calc-result-val { font-family: var(--mono); font-size: 18px; font-weight: 500; }
+  .calc-result-card.bcv .calc-result-val { color: var(--green); }
+  .calc-result-card.p2p .calc-result-val { color: var(--orange); }
+
+  /* SOURCES */
+  .sources-section { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 1.25rem 1.5rem; margin-bottom: 1.5rem; }
+  .source-row { display: flex; align-items: center; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--border); }
+  .source-row:last-child { border-bottom: none; }
+  .source-info { display: flex; align-items: center; gap: 10px; }
+  .status-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--dim); transition: background 0.3s; }
+  .status-dot.ok { background: var(--green); box-shadow: 0 0 6px var(--green); }
+  .status-dot.err { background: var(--red); }
+  .source-name { font-family: var(--mono); font-size: 13px; color: var(--text); }
+  .source-status { font-family: var(--mono); font-size: 12px; color: var(--muted); }
+
+  /* FOOTER */
+  .footer { font-family: var(--mono); font-size: 11px; color: var(--dim); line-height: 1.8; border-top: 1px solid var(--border); padding-top: 1rem; }
+
+  /* TOOLTIP */
+  .chart-tooltip {
+    position: absolute;
+    background: #1a1a24;
+    border: 1px solid var(--border2);
+    border-radius: 8px;
+    padding: 8px 12px;
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--text);
+    pointer-events: none;
+    white-space: nowrap;
+    display: none;
+    z-index: 10;
+  }
+
+  @media (max-width: 600px) {
+    .title { font-size: 24px; }
+    .brecha-pct { font-size: 48px; }
+    .brecha-hero { padding: 1.5rem; }
+    .calc-results { grid-template-columns: 1fr; }
+    .horizon-btns { flex-wrap: wrap; }
+  }
+</style>
+</head>
+<body>
+<div class="grid-bg"></div>
+<div class="page">
+
+  <div class="header">
+    <div class="header-left">
+      <div class="eyebrow">Monitor cambiario · Venezuela</div>
+      <div class="title">Brecha<br><span>Cambiaria</span></div>
+    </div>
+    <div class="header-right">
+      <button class="refresh-btn" onclick="fetchAll()">
+        <span class="refresh-icon" id="refresh-icon">↻</span> Actualizar
+      </button>
+      <span class="last-update" id="last-update">—</span>
+    </div>
+  </div>
+
+  <div class="error-banner" id="error-banner"></div>
+
+  <!-- HERO -->
+  <div class="brecha-hero">
+    <div>
+      <div class="brecha-label">Brecha cambiaria actual</div>
+      <div class="brecha-pct" id="brecha-pct">—</div>
+      <div class="brecha-abs" id="brecha-abs">sobre la tasa BCV</div>
+    </div>
+    <div class="brecha-rates">
+      <div class="rate-item">
+        <div class="rate-dot" style="background:var(--green)"></div>
+        <div>
+          <div class="rate-name">BCV Oficial</div>
+          <div class="rate-value green" id="hero-bcv">cargando…</div>
+        </div>
+      </div>
+      <div class="rate-item">
+        <div class="rate-dot" style="background:var(--orange)"></div>
+        <div>
+          <div class="rate-name">Paralelo (USDT P2P)</div>
+          <div class="rate-value orange" id="hero-p2p">cargando…</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- GRÁFICA HISTÓRICA -->
+  <div class="chart-section">
+    <div class="chart-header">
+      <div class="chart-title-group">
+        <div class="chart-title">Brecha histórica (%)</div>
+        <div class="chart-subtitle" id="chart-subtitle">Cargando datos históricos…</div>
+      </div>
+      <div class="horizon-btns">
+        <button class="horizon-btn" data-days="1" onclick="setHorizon(1)">1D</button>
+        <button class="horizon-btn" data-days="7" onclick="setHorizon(7)">1S</button>
+        <button class="horizon-btn active" data-days="30" onclick="setHorizon(30)">1M</button>
+        <button class="horizon-btn" data-days="180" onclick="setHorizon(180)">6M</button>
+        <button class="horizon-btn" data-days="365" onclick="setHorizon(365)">1A</button>
+      </div>
+    </div>
+    <div class="chart-wrap">
+      <canvas id="breachaChart"></canvas>
+      <div class="chart-loading" id="chart-loading">Cargando…</div>
+      <div class="chart-tooltip" id="chart-tooltip"></div>
+    </div>
+    <div class="chart-stats">
+      <div class="chart-stat">
+        <div class="chart-stat-label">Mínimo del período</div>
+        <div class="chart-stat-val" id="stat-min">—</div>
+      </div>
+      <div class="chart-stat">
+        <div class="chart-stat-label">Máximo del período</div>
+        <div class="chart-stat-val" id="stat-max">—</div>
+      </div>
+      <div class="chart-stat">
+        <div class="chart-stat-label">Promedio del período</div>
+        <div class="chart-stat-val" id="stat-avg">—</div>
+      </div>
+      <div class="chart-stat">
+        <div class="chart-stat-label">Cambio en el período</div>
+        <div class="chart-stat-val" id="stat-change">—</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- BARRAS -->
+  <div class="bar-section">
+    <div class="bar-title">Comparación visual hoy (Bs./USD)</div>
+    <div class="bar-row">
+      <div class="bar-meta">
+        <span class="bar-meta-label">BCV Oficial</span>
+        <span class="bar-meta-val" id="bar-bcv-val">—</span>
+      </div>
+      <div class="bar-track"><div class="bar-fill" id="bar-bcv" style="width:0%;background:var(--green)"></div></div>
+    </div>
+    <div class="bar-row">
+      <div class="bar-meta">
+        <span class="bar-meta-label">Paralelo P2P</span>
+        <span class="bar-meta-val" id="bar-p2p-val">—</span>
+      </div>
+      <div class="bar-track"><div class="bar-fill" id="bar-p2p" style="width:0%;background:var(--orange)"></div></div>
+    </div>
+  </div>
+
+  <!-- MÉTRICAS -->
+  <div class="metrics-grid">
+    <div class="metric-card">
+      <div class="metric-card-label">Diferencia absoluta</div>
+      <div class="metric-card-val" id="m-diff">—</div>
+      <div class="metric-card-sub">Bs. por USD</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-card-label">Factor multiplicador</div>
+      <div class="metric-card-val" id="m-factor">—</div>
+      <div class="metric-card-sub">paralelo ÷ BCV</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-card-label">Última actualización BCV</div>
+      <div class="metric-card-val" id="m-bcv-date" style="font-size:13px">—</div>
+      <div class="metric-card-sub">fecha publicada</div>
+    </div>
+  </div>
+
+  <!-- CALCULADORA -->
+  <div class="calc-section">
+    <div class="section-title">Calculadora de conversión</div>
+    <div class="calc-inputs">
+      <div class="calc-input-group" style="flex:2">
+        <label>Monto</label>
+        <input type="number" id="calc-amount" value="100" min="0" step="any" oninput="recalc()" />
+      </div>
+      <div class="calc-input-group" style="flex:2">
+        <label>Conversión</label>
+        <select id="calc-from" onchange="recalc()">
+          <option value="usd">USD → Bolívares</option>
+          <option value="ves">Bolívares → USD</option>
+        </select>
+      </div>
+    </div>
+    <div class="calc-results">
+      <div class="calc-result-card bcv">
+        <div class="calc-result-label">Tasa BCV</div>
+        <div class="calc-result-val" id="calc-bcv">—</div>
+      </div>
+      <div class="calc-result-card p2p">
+        <div class="calc-result-label">Tasa Paralela</div>
+        <div class="calc-result-val" id="calc-p2p">—</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- FUENTES -->
+  <div class="sources-section">
+    <div class="section-title">Estado de las fuentes</div>
+    <div class="source-row">
+      <div class="source-info">
+        <div class="status-dot" id="dot-oficial"></div>
+        <span class="source-name">ve.dolarapi.com — Dólar Oficial (BCV)</span>
+      </div>
+      <span class="source-status" id="src-oficial">—</span>
+    </div>
+    <div class="source-row">
+      <div class="source-info">
+        <div class="status-dot" id="dot-paralelo"></div>
+        <span class="source-name">ve.dolarapi.com — Dólar Paralelo (P2P)</span>
+      </div>
+      <span class="source-status" id="src-paralelo">—</span>
+    </div>
+    <div class="source-row">
+      <div class="source-info">
+        <div class="status-dot" id="dot-hist"></div>
+        <span class="source-name">ve.dolarapi.com — Históricos (gráfica)</span>
+      </div>
+      <span class="source-status" id="src-hist">—</span>
+    </div>
+  </div>
+
+  <div class="footer">
+    Fuente: <strong style="color:var(--muted)">DolarApi.com</strong> — proyecto open source bajo licencia MIT ·
+    <a href="https://dolarapi.com/docs/venezuela/" style="color:var(--muted)">ver documentación</a><br>
+    Oficial = tasa diaria publicada por el BCV. Paralelo = promedio del mercado P2P (USDT/Binance).<br>
+    Los datos son referenciales. Actualización automática cada 2 minutos. Abre este archivo directamente en tu navegador.
+  </div>
+
+</div>
+
+<!-- Chart.js -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script>
+  let bcvRate = null, p2pRate = null;
+  let histOficial = [], histParalelo = [];
+  let currentHorizon = 30;
+  let chartInstance = null;
+
+  const fmt = (n, dec=2) => parseFloat(n).toLocaleString('es-VE', {
+    minimumFractionDigits: dec, maximumFractionDigits: dec
+  });
+
+  function setDot(id, ok) {
+    document.getElementById(id).className = 'status-dot ' + (ok ? 'ok' : 'err');
+  }
+
+  function showError(msg) {
+    const el = document.getElementById('error-banner');
+    el.textContent = msg || '';
+    el.style.display = msg ? 'block' : 'none';
+  }
+
+  // ── FETCH ACTUAL ──────────────────────────────────────────
+  async function fetchOficial() {
+    try {
+      const r = await fetch('https://ve.dolarapi.com/v1/dolares/oficial');
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      const d = await r.json();
+      if (!d.promedio) throw new Error('Campo promedio ausente');
+      bcvRate = parseFloat(d.promedio);
+      const fecha = d.fechaActualizacion
+        ? new Date(d.fechaActualizacion).toLocaleDateString('es-VE') : '—';
+      document.getElementById('src-oficial').textContent = 'OK · ' + fecha;
+      document.getElementById('m-bcv-date').textContent = fecha;
+      setDot('dot-oficial', true);
+    } catch(e) {
+      document.getElementById('src-oficial').textContent = 'Error: ' + e.message;
+      setDot('dot-oficial', false);
+      bcvRate = null;
+    }
+  }
+
+  async function fetchParalelo() {
+    try {
+      const r = await fetch('https://ve.dolarapi.com/v1/dolares/paralelo');
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      const d = await r.json();
+      if (!d.promedio) throw new Error('Campo promedio ausente');
+      p2pRate = parseFloat(d.promedio);
+      const fecha = d.fechaActualizacion
+        ? new Date(d.fechaActualizacion).toLocaleDateString('es-VE') : '—';
+      document.getElementById('src-paralelo').textContent = 'OK · ' + fecha;
+      setDot('dot-paralelo', true);
+    } catch(e) {
+      document.getElementById('src-paralelo').textContent = 'Error: ' + e.message;
+      setDot('dot-paralelo', false);
+      p2pRate = null;
+    }
+  }
+
+  // ── FETCH HISTÓRICO ───────────────────────────────────────
+  async function fetchHistorico() {
+    try {
+      const [rO, rP] = await Promise.all([
+        fetch('https://ve.dolarapi.com/v1/historicos/dolares/oficial'),
+        fetch('https://ve.dolarapi.com/v1/historicos/dolares/paralelo')
+      ]);
+      if (!rO.ok || !rP.ok) throw new Error('Error en histórico');
+      const [dO, dP] = await Promise.all([rO.json(), rP.json()]);
+
+      // Indexar por fecha
+      const mapO = {};
+      dO.forEach(e => { if (e.fecha && e.promedio) mapO[e.fecha.slice(0,10)] = parseFloat(e.promedio); });
+      const mapP = {};
+      dP.forEach(e => { if (e.fecha && e.promedio) mapP[e.fecha.slice(0,10)] = parseFloat(e.promedio); });
+
+      // Cruzar fechas que existen en ambos
+      const fechas = Object.keys(mapO).filter(f => mapP[f]).sort();
+
+      histOficial = fechas.map(f => ({ fecha: f, val: mapO[f] }));
+      histParalelo = fechas.map(f => ({ fecha: f, val: mapP[f] }));
+
+      document.getElementById('src-hist').textContent = `OK · ${fechas.length} registros`;
+      setDot('dot-hist', true);
+
+      renderChart(currentHorizon);
+    } catch(e) {
+      document.getElementById('src-hist').textContent = 'Error: ' + e.message;
+      setDot('dot-hist', false);
+      document.getElementById('chart-loading').textContent = 'No se pudieron cargar los datos históricos.';
+    }
+  }
+
+  // ── GRÁFICA ───────────────────────────────────────────────
+  function setHorizon(days) {
+    currentHorizon = days;
+    document.querySelectorAll('.horizon-btn').forEach(b => {
+      b.classList.toggle('active', parseInt(b.dataset.days) === days);
+    });
+    renderChart(days);
+  }
+
+  function filterByDays(days) {
+    if (histOficial.length === 0) return { labels: [], data: [] };
+
+    const cutoff = new Date();
+    cutoff.setDate(cutoff.getDate() - days);
+    const cutoffStr = cutoff.toISOString().slice(0,10);
+
+    const filtered = histOficial
+      .map((o, i) => ({
+        fecha: o.fecha,
+        oficial: o.val,
+        paralelo: histParalelo[i] ? histParalelo[i].val : null
+      }))
+      .filter(e => e.fecha >= cutoffStr && e.paralelo !== null);
+
+    // Para 1D usamos solo el último punto disponible + el actual si existe
+    if (days === 1) {
+      const last7 = filtered.slice(-7);
+      return {
+        labels: last7.map(e => fmtFecha(e.fecha, days)),
+        data: last7.map(e => parseFloat(((e.paralelo - e.oficial) / e.oficial * 100).toFixed(2)))
+      };
+    }
+
+    return {
+      labels: filtered.map(e => fmtFecha(e.fecha, days)),
+      data: filtered.map(e => parseFloat(((e.paralelo - e.oficial) / e.oficial * 100).toFixed(2)))
+    };
+  }
+
+  function fmtFecha(isoStr, days) {
+    const d = new Date(isoStr + 'T12:00:00');
+    if (days <= 7) return d.toLocaleDateString('es-VE', { weekday: 'short', day: 'numeric' });
+    if (days <= 60) return d.toLocaleDateString('es-VE', { day: 'numeric', month: 'short' });
+    return d.toLocaleDateString('es-VE', { month: 'short', year: '2-digit' });
+  }
+
+  function renderChart(days) {
+    const loading = document.getElementById('chart-loading');
+    if (histOficial.length === 0) {
+      loading.style.display = 'flex';
+      loading.textContent = 'Cargando datos históricos…';
+      return;
+    }
+    loading.style.display = 'none';
+
+    const { labels, data } = filterByDays(days);
+
+    if (data.length === 0) {
+      loading.style.display = 'flex';
+      loading.textContent = 'Sin datos para este período.';
+      return;
+    }
+
+    // Subtítulo
+    const horizonLabel = { 1: 'últimos días disponibles', 7: 'última semana', 30: 'último mes', 180: 'últimos 6 meses', 365: 'último año' };
+    document.getElementById('chart-subtitle').textContent =
+      `${labels[0]} → ${labels[labels.length-1]} · ${data.length} registros`;
+
+    // Stats
+    const min = Math.min(...data), max = Math.max(...data);
+    const avg = data.reduce((a,b)=>a+b,0) / data.length;
+    const change = data[data.length-1] - data[0];
+    document.getElementById('stat-min').textContent = min.toFixed(1) + '%';
+    document.getElementById('stat-max').textContent = max.toFixed(1) + '%';
+    document.getElementById('stat-avg').textContent = avg.toFixed(1) + '%';
+    document.getElementById('stat-change').textContent = (change >= 0 ? '+' : '') + change.toFixed(1) + '%';
+    document.getElementById('stat-change').style.color = change >= 0 ? 'var(--red)' : 'var(--green)';
+
+    const canvas = document.getElementById('breachaChart');
+    const ctx = canvas.getContext('2d');
+
+    // Gradiente naranja bajo la línea
+    const grad = ctx.createLinearGradient(0, 0, 0, 260);
+    grad.addColorStop(0, 'rgba(240,112,48,0.25)');
+    grad.addColorStop(1, 'rgba(240,112,48,0.0)');
+
+    // Reducir puntos si hay demasiados (> 180) para legibilidad
+    let finalLabels = labels, finalData = data;
+    if (data.length > 180) {
+      const step = Math.ceil(data.length / 180);
+      finalLabels = labels.filter((_, i) => i % step === 0 || i === labels.length - 1);
+      finalData = data.filter((_, i) => i % step === 0 || i === data.length - 1);
+    }
+
+    if (chartInstance) chartInstance.destroy();
+
+    chartInstance = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: finalLabels,
+        datasets: [{
+          data: finalData,
+          borderColor: '#f07030',
+          borderWidth: 2,
+          backgroundColor: grad,
+          fill: true,
+          tension: 0.3,
+          pointRadius: finalData.length > 60 ? 0 : 3,
+          pointHoverRadius: 5,
+          pointBackgroundColor: '#f07030',
+          pointBorderColor: '#0a0a0f',
+          pointBorderWidth: 2,
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        interaction: { mode: 'index', intersect: false },
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            enabled: false,
+            external: externalTooltip
+          }
+        },
+        scales: {
+          x: {
+            grid: { color: 'rgba(255,255,255,0.04)', drawTicks: false },
+            ticks: {
+              color: '#888780',
+              font: { family: "'DM Mono', monospace", size: 10 },
+              maxTicksLimit: 8,
+              maxRotation: 0
+            },
+            border: { color: 'rgba(255,255,255,0.07)' }
+          },
+          y: {
+            grid: { color: 'rgba(255,255,255,0.04)', drawTicks: false },
+            ticks: {
+              color: '#888780',
+              font: { family: "'DM Mono', monospace", size: 10 },
+              callback: v => v.toFixed(0) + '%',
+              maxTicksLimit: 6
+            },
+            border: { color: 'rgba(255,255,255,0.07)', dash: [4,4] }
+          }
+        }
+      }
+    });
+  }
+
+  function externalTooltip(context) {
+    const tooltip = document.getElementById('chart-tooltip');
+    if (context.tooltip.opacity === 0) { tooltip.style.display = 'none'; return; }
+
+    const dp = context.tooltip.dataPoints[0];
+    const pct = parseFloat(dp.raw);
+    tooltip.innerHTML =
+      `<span style="color:var(--muted);font-size:10px;">${dp.label}</span><br>` +
+      `<span style="color:var(--orange);font-weight:500;">Brecha: +${pct.toFixed(2)}%</span>`;
+
+    const { offsetLeft, offsetTop } = context.chart.canvas;
+    let x = offsetLeft + context.tooltip.caretX + 12;
+    let y = offsetTop + context.tooltip.caretY - 20;
+    if (x + 160 > context.chart.canvas.offsetWidth) x = offsetLeft + context.tooltip.caretX - 145;
+    tooltip.style.left = x + 'px';
+    tooltip.style.top = y + 'px';
+    tooltip.style.display = 'block';
+  }
+
+  // ── UI GENERAL ────────────────────────────────────────────
+  function updateUI() {
+    if (bcvRate === null || p2pRate === null) {
+      showError('Una o más fuentes no respondieron. Verifica tu conexión e intenta actualizar.');
+      return;
+    }
+    showError('');
+
+    const diff = p2pRate - bcvRate;
+    const pct = (diff / bcvRate) * 100;
+    const factor = p2pRate / bcvRate;
+
+    document.getElementById('brecha-pct').textContent = (pct >= 0 ? '+' : '') + pct.toFixed(1) + '%';
+    document.getElementById('brecha-abs').textContent = fmt(diff, 0) + ' Bs. por encima del BCV';
+    document.getElementById('hero-bcv').textContent = fmt(bcvRate) + ' Bs.';
+    document.getElementById('hero-p2p').textContent = fmt(p2pRate) + ' Bs.';
+
+    const max = Math.max(bcvRate, p2pRate);
+    document.getElementById('bar-bcv').style.width = ((bcvRate / max) * 100).toFixed(1) + '%';
+    document.getElementById('bar-p2p').style.width = '100%';
+    document.getElementById('bar-bcv-val').textContent = fmt(bcvRate) + ' Bs.';
+    document.getElementById('bar-p2p-val').textContent = fmt(p2pRate) + ' Bs.';
+
+    document.getElementById('m-diff').textContent = fmt(diff, 0) + ' Bs.';
+    document.getElementById('m-factor').textContent = 'x' + factor.toFixed(2);
+
+    recalc();
+  }
+
+  function recalc() {
+    if (bcvRate === null || p2pRate === null) return;
+    const amount = parseFloat(document.getElementById('calc-amount').value) || 0;
+    const from = document.getElementById('calc-from').value;
+    if (from === 'usd') {
+      document.getElementById('calc-bcv').textContent = fmt(amount * bcvRate, 2) + ' Bs.';
+      document.getElementById('calc-p2p').textContent = fmt(amount * p2pRate, 2) + ' Bs.';
+    } else {
+      document.getElementById('calc-bcv').textContent = fmt(amount / bcvRate, 4) + ' USD';
+      document.getElementById('calc-p2p').textContent = fmt(amount / p2pRate, 4) + ' USD';
+    }
+  }
+
+  async function fetchAll() {
+    const icon = document.getElementById('refresh-icon');
+    icon.classList.add('spin');
+    document.getElementById('last-update').textContent = 'actualizando...';
+
+    await Promise.all([fetchOficial(), fetchParalelo(), fetchHistorico()]);
+    updateUI();
+
+    icon.classList.remove('spin');
+    document.getElementById('last-update').textContent =
+      'Actualizado: ' + new Date().toLocaleTimeString('es-VE');
+  }
+
+  fetchAll();
+  setInterval(fetchAll, 120000);
+</script>
+</body>
+</html>
