@@ -156,11 +156,24 @@
   }
 
   @media (max-width: 600px) {
+    body { padding: 1rem 0.75rem; }
     .title { font-size: 24px; }
-    .brecha-pct { font-size: 48px; }
-    .brecha-hero { padding: 1.5rem; }
-    .calc-results { grid-template-columns: 1fr; }
+    .brecha-pct { font-size: 44px; }
+    .brecha-hero { padding: 1.25rem; flex-direction: column; gap: 1.25rem; }
+    .brecha-rates { flex-direction: row; flex-wrap: wrap; gap: 12px; }
+    .rate-value { font-size: 18px; }
+    .calc-section { padding: 1.25rem; }
+    .calc-inputs { flex-direction: column; }
+    .calc-results[style*="1fr 1fr 1fr"] { grid-template-columns: 1fr 1fr !important; }
+    .calc-result-card:last-child { grid-column: 1 / -1; }
+    .calc-result-val { font-size: 16px; }
     .horizon-btns { flex-wrap: wrap; }
+    .chart-stats { gap: 1rem; }
+    .metrics-grid { grid-template-columns: 1fr 1fr; }
+    .source-row { flex-direction: column; align-items: flex-start; gap: 4px; }
+    .source-name { font-size: 11px; }
+    .bar-section { padding: 1rem; }
+    .bar-meta-label { font-size: 12px; }
   }
 </style>
 </head>
