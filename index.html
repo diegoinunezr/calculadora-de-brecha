@@ -256,7 +256,7 @@
     <div class="calc-inputs">
       <div class="calc-input-group" style="flex:2">
         <label>Monto</label>
-        <input type="number" id="calc-amount" value="100" min="0" step="any" oninput="recalc()" />
+        <input type="text" inputmode="decimal" id="calc-amount" value="100" autocomplete="off" oninput="handleAmountInput(this)" />
       </div>
       <div class="calc-input-group" style="flex:2">
         <label>Dirección</label>
@@ -442,6 +442,39 @@
   let histOficial = [], histParalelo = [];
   let currentHorizon = 30;
   let chartInstance = null;
+
+  function handleAmountInput(el) {
+    const cursorPos = el.selectionStart;
+    const prevLen = el.value.length;
+
+    // Extraer solo dígitos y coma
+    let raw = el.value.replace(/[^0-9,]/g, '');
+
+    // Solo una coma permitida
+    const parts = raw.split(',');
+    let intPart = parts[0];
+    let decPart = parts.length > 1 ? ',' + parts.slice(1).join('') : '';
+
+    // Limitar decimales a 2
+    if (decPart.length > 3) decPart = decPart.slice(0, 3);
+
+    // Formatear parte entera con puntos de miles
+    intPart = intPart.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+
+    el.value = intPart + decPart;
+
+    // Restaurar posición del cursor
+    const newLen = el.value.length;
+    el.setSelectionRange(cursorPos + (newLen - prevLen), cursorPos + (newLen - prevLen));
+
+    recalc();
+  }
+
+  function getAmount() {
+    const raw = document.getElementById('calc-amount').value;
+    // Quitar puntos de miles, reemplazar coma decimal por punto
+    return parseFloat(raw.replace(/\./g, '').replace(',', '.')) || 0;
+  }
 
   function copyVal(id, btn) {
     const text = document.getElementById(id).textContent;
@@ -769,7 +802,7 @@
 
   function recalc() {
     if (bcvRate === null || p2pRate === null) return;
-    const amount = parseFloat(document.getElementById('calc-amount').value) || 0;
+    const amount = getAmount();
     const dir = document.getElementById('calc-from').value;
 
     if (dir === 'fiat_to_ves') {
