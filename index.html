@@ -106,24 +106,31 @@
   .calc-input-group label { font-family: var(--mono); font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; }
   .calc-input-group input, .calc-input-group select { background: var(--surface2); border: 1px solid var(--border2); border-radius: 8px; padding: 10px 12px; color: var(--text); font-family: var(--mono); font-size: 15px; outline: none; transition: border-color 0.15s; }
   .calc-input-group input:focus, .calc-input-group select:focus { border-color: var(--orange); }
-  .calc-group-label { font-family: var(--mono); font-size: 10px; color: var(--dim); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 8px; padding-bottom: 6px; border-bottom: 1px solid var(--border); }
-  .calc-results { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 14px; }
-  .calc-result-card { border-radius: 10px; padding: 14px 16px; }
-  .calc-result-card.bcv     { background: rgba(31,201,127,0.08);  border: 1px solid rgba(31,201,127,0.2); }
-  .calc-result-card.p2p     { background: rgba(240,112,48,0.08);  border: 1px solid rgba(240,112,48,0.2); }
-  .calc-result-card.eur-bcv { background: rgba(77,168,240,0.08);  border: 1px solid rgba(77,168,240,0.2); }
-  .calc-result-card.eur-p2p { background: rgba(167,139,250,0.08); border: 1px solid rgba(167,139,250,0.2); }
-  .calc-result-label { font-family: var(--mono); font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 3px; }
-  .calc-result-sublabel { font-family: var(--mono); font-size: 10px; color: var(--dim); margin-bottom: 8px; }
-  .calc-result-card.bcv     .calc-result-label { color: #1fc97f; }
-  .calc-result-card.p2p     .calc-result-label { color: #f07030; }
-  .calc-result-card.eur-bcv .calc-result-label { color: #4da8f0; }
-  .calc-result-card.eur-p2p .calc-result-label { color: #a78bfa; }
-  .calc-result-val { font-family: var(--mono); font-size: 18px; font-weight: 500; }
-  .calc-result-card.bcv     .calc-result-val { color: #1fc97f; }
-  .calc-result-card.p2p     .calc-result-val { color: #f07030; }
-  .calc-result-card.eur-bcv .calc-result-val { color: #4da8f0; }
-  .calc-result-card.eur-p2p .calc-result-val { color: #a78bfa; }
+  /* CALC CARDS */
+  .calc-cards { display: flex; flex-direction: column; gap: 8px; }
+  .calc-card {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 10px 14px; border-radius: 10px;
+  }
+  .calc-card.bcv     { background: rgba(31,201,127,0.08);  border: 1px solid rgba(31,201,127,0.2); }
+  .calc-card.p2p     { background: rgba(240,112,48,0.08);  border: 1px solid rgba(240,112,48,0.2); }
+  .calc-card.eur-bcv { background: rgba(77,168,240,0.08);  border: 1px solid rgba(77,168,240,0.2); }
+  .calc-card-top { display: flex; flex-direction: column; gap: 2px; }
+  .calc-card-tag {
+    font-family: var(--mono); font-size: 11px; font-weight: 500;
+    text-transform: uppercase; letter-spacing: 0.08em;
+  }
+  .calc-card.bcv     .calc-card-tag { color: #1fc97f; }
+  .calc-card.p2p     .calc-card-tag { color: #f07030; }
+  .calc-card.eur-bcv .calc-card-tag { color: #4da8f0; }
+  .calc-card-rate { font-family: var(--mono); font-size: 11px; color: var(--dim); }
+  .calc-card-val {
+    font-family: var(--mono); font-size: 20px; font-weight: 500;
+    text-align: right; white-space: nowrap;
+  }
+  .calc-card.bcv     .calc-card-val { color: #1fc97f; }
+  .calc-card.p2p     .calc-card-val { color: #f07030; }
+  .calc-card.eur-bcv .calc-card-val { color: #4da8f0; }
 
   /* SOURCES */
   .sources-section { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 1.25rem 1.5rem; margin-bottom: 1.5rem; }
@@ -164,9 +171,7 @@
     .rate-value { font-size: 18px; }
     .calc-section { padding: 1.25rem; }
     .calc-inputs { flex-direction: column; }
-    .calc-results[style*="1fr 1fr 1fr"] { grid-template-columns: 1fr 1fr !important; }
-    .calc-result-card:last-child { grid-column: 1 / -1; }
-    .calc-result-val { font-size: 16px; }
+    .calc-card-val { font-size: 17px; }
     .horizon-btns { flex-wrap: wrap; }
     .chart-stats { gap: 1rem; }
     .metrics-grid { grid-template-columns: 1fr 1fr; }
@@ -245,21 +250,27 @@
       </div>
     </div>
 
-    <div class="calc-results" style="grid-template-columns:1fr 1fr 1fr;">
-      <div class="calc-result-card bcv">
-        <div class="calc-result-label">USD · Tasa BCV</div>
-        <div class="calc-result-sublabel" id="calc-bcv-rate">—</div>
-        <div class="calc-result-val" id="calc-bcv">—</div>
+    <div class="calc-cards">
+      <div class="calc-card bcv">
+        <div class="calc-card-top">
+          <span class="calc-card-tag">USD · BCV</span>
+          <span class="calc-card-rate" id="calc-bcv-rate">—</span>
+        </div>
+        <div class="calc-card-val" id="calc-bcv">—</div>
       </div>
-      <div class="calc-result-card eur-bcv">
-        <div class="calc-result-label">EUR · Tasa BCV</div>
-        <div class="calc-result-sublabel" id="calc-eur-bcv-rate">—</div>
-        <div class="calc-result-val" id="calc-eur-bcv">—</div>
+      <div class="calc-card eur-bcv">
+        <div class="calc-card-top">
+          <span class="calc-card-tag">EUR · BCV</span>
+          <span class="calc-card-rate" id="calc-eur-bcv-rate">—</span>
+        </div>
+        <div class="calc-card-val" id="calc-eur-bcv">—</div>
       </div>
-      <div class="calc-result-card p2p">
-        <div class="calc-result-label">USD · USDT P2P</div>
-        <div class="calc-result-sublabel" id="calc-p2p-rate">—</div>
-        <div class="calc-result-val" id="calc-p2p">—</div>
+      <div class="calc-card p2p">
+        <div class="calc-card-top">
+          <span class="calc-card-tag">USDT P2P</span>
+          <span class="calc-card-rate" id="calc-p2p-rate">—</span>
+        </div>
+        <div class="calc-card-val" id="calc-p2p">—</div>
       </div>
     </div>
   </div>
