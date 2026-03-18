@@ -124,6 +124,23 @@
   .calc-card.p2p     .calc-card-tag { color: #f07030; }
   .calc-card.eur-bcv .calc-card-tag { color: #4da8f0; }
   .calc-card-rate { font-family: var(--mono); font-size: 11px; color: var(--dim); }
+  .calc-card-right { display: flex; align-items: center; gap: 10px; }
+  .copy-btn {
+    flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    width: 30px; height: 30px;
+    background: transparent;
+    border: 1px solid var(--border2);
+    border-radius: 7px;
+    color: var(--muted);
+    cursor: pointer;
+    transition: color 0.15s, border-color 0.15s, background 0.15s;
+  }
+  .copy-btn svg { width: 14px; height: 14px; }
+  .copy-btn:hover { color: var(--text); border-color: var(--border2); background: var(--surface2); }
+  .copy-btn.copied { color: var(--green); border-color: rgba(31,201,127,0.4); background: rgba(31,201,127,0.08); }
+  .calc-card.eur-bcv .copy-btn.copied { color: #4da8f0; border-color: rgba(77,168,240,0.4); background: rgba(77,168,240,0.08); }
+  .calc-card.p2p .copy-btn.copied { color: #f07030; border-color: rgba(240,112,48,0.4); background: rgba(240,112,48,0.08); }
   .calc-card-val {
     font-family: var(--mono); font-size: 20px; font-weight: 500;
     text-align: right; white-space: nowrap;
@@ -256,21 +273,36 @@
           <span class="calc-card-tag">USD · BCV</span>
           <span class="calc-card-rate" id="calc-bcv-rate">—</span>
         </div>
-        <div class="calc-card-val" id="calc-bcv">—</div>
+        <div class="calc-card-right">
+          <div class="calc-card-val" id="calc-bcv">—</div>
+          <button class="copy-btn" onclick="copyVal('calc-bcv', this)" title="Copiar">
+            <svg viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="5" y="5" width="9" height="9" rx="1.5" stroke="currentColor" stroke-width="1.4"/><path d="M11 5V3.5A1.5 1.5 0 0 0 9.5 2H3.5A1.5 1.5 0 0 0 2 3.5V9.5A1.5 1.5 0 0 0 3.5 11H5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
+          </button>
+        </div>
       </div>
       <div class="calc-card eur-bcv">
         <div class="calc-card-top">
           <span class="calc-card-tag">EUR · BCV</span>
           <span class="calc-card-rate" id="calc-eur-bcv-rate">—</span>
         </div>
-        <div class="calc-card-val" id="calc-eur-bcv">—</div>
+        <div class="calc-card-right">
+          <div class="calc-card-val" id="calc-eur-bcv">—</div>
+          <button class="copy-btn" onclick="copyVal('calc-eur-bcv', this)" title="Copiar">
+            <svg viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="5" y="5" width="9" height="9" rx="1.5" stroke="currentColor" stroke-width="1.4"/><path d="M11 5V3.5A1.5 1.5 0 0 0 9.5 2H3.5A1.5 1.5 0 0 0 2 3.5V9.5A1.5 1.5 0 0 0 3.5 11H5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
+          </button>
+        </div>
       </div>
       <div class="calc-card p2p">
         <div class="calc-card-top">
           <span class="calc-card-tag">USDT P2P</span>
           <span class="calc-card-rate" id="calc-p2p-rate">—</span>
         </div>
-        <div class="calc-card-val" id="calc-p2p">—</div>
+        <div class="calc-card-right">
+          <div class="calc-card-val" id="calc-p2p">—</div>
+          <button class="copy-btn" onclick="copyVal('calc-p2p', this)" title="Copiar">
+            <svg viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="5" y="5" width="9" height="9" rx="1.5" stroke="currentColor" stroke-width="1.4"/><path d="M11 5V3.5A1.5 1.5 0 0 0 9.5 2H3.5A1.5 1.5 0 0 0 2 3.5V9.5A1.5 1.5 0 0 0 3.5 11H5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
+          </button>
+        </div>
       </div>
     </div>
   </div>
@@ -410,6 +442,19 @@
   let histOficial = [], histParalelo = [];
   let currentHorizon = 30;
   let chartInstance = null;
+
+  function copyVal(id, btn) {
+    const text = document.getElementById(id).textContent;
+    const num = text.replace(/[^0-9.,]/g, '').replace(/\./g, '').replace(',', '.');
+    navigator.clipboard.writeText(num).then(() => {
+      btn.classList.add('copied');
+      btn.innerHTML = '<svg viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M3 8.5l3.5 3.5 6.5-7" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+      setTimeout(() => {
+        btn.classList.remove('copied');
+        btn.innerHTML = '<svg viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="5" y="5" width="9" height="9" rx="1.5" stroke="currentColor" stroke-width="1.4"/><path d="M11 5V3.5A1.5 1.5 0 0 0 9.5 2H3.5A1.5 1.5 0 0 0 2 3.5V9.5A1.5 1.5 0 0 0 3.5 11H5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>';
+      }, 1500);
+    });
+  }
 
   const fmt = (n, dec=2) => parseFloat(n).toLocaleString('es-VE', {
     minimumFractionDigits: dec, maximumFractionDigits: dec
